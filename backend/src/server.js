@@ -7,6 +7,10 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import geminiRoutes from './api/gemini.routes.js';
+import clerkMiddleware from './clerk.middleware.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Initialize the Express app.x
 const app = express();
@@ -18,9 +22,10 @@ app.use(bodyParser.json());
 
 // Register the API routes.
 // We prefix the routes with '/api'.
-app.use('/api', geminiRoutes);
+app.use('/api', clerkMiddleware);
+app.use('/api',  geminiRoutes);
 
 // Start the server.
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running on http://localhost:${process.env.PORT}`);
 });
