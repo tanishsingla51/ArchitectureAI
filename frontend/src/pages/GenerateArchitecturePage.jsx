@@ -1,43 +1,45 @@
-import React from 'react'
+import React from 'react';
 import { Copy, Check, Sparkles, AlertCircle } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import useApiStore from '../store/apiStore.js';
-import { useAuth } from '@clerk/clerk-react';
-
-
+import { useAuth, useClerk } from '@clerk/clerk-react';
+import { useEffect } from 'react';
 
 const GenerateArchitecturePage = () => {
-
-     // Use the Zustand store to get state and actions.
-  const { 
-    prompt, 
-    solution, 
-    isLoading, 
-    isCopied, 
-    error, 
-    isFallback, 
-    setPrompt, 
-    generateSolution, 
-    handleCopy 
+  const {
+    prompt,
+    solution,
+    isLoading,
+    isCopied,
+    error,
+    isFallback,
+    setPrompt,
+    generateSolution,
+    handleCopy
   } = useApiStore();
 
-  const { isSignedIn, getToken } = useAuth();
+        const { isSignedIn, getToken } = useAuth();
+        const { openSignIn } = useClerk();
 
-  const handleGenerateClick = () => {
-    // Check if the user is signed in before calling the API.
-    if (!isSignedIn) {
-        // Since we removed the local state, we'll use an alert as a temporary prompt.
-        // In a real application, you'd show a modal here.
-       alert("Please sign in to generate a backend.");
+      useEffect(() => {
+        const savedPrompt = localStorage.getItem('userPrompt');
+        if (savedPrompt) {
+          setPrompt(savedPrompt);
+          localStorage.removeItem('userPrompt');
+        }
+      }, []);
 
-        return;
-    }
-    // Call the action from the store, passing the getToken function.
-    generateSolution(getToken);
-  };
+      const handleGenerateClick = () => {
+        if (!isSignedIn) {
+          localStorage.setItem('userPrompt', prompt);
+          openSignIn();
+          return;
+        }
+        generateSolution(getToken);
+      };
 
   return (
     <div>
@@ -97,7 +99,7 @@ const GenerateArchitecturePage = () => {
                 </div>
                 {(error.includes('overloaded') || error.includes('Rate limit')) && (
                   <button
-                    onClick={() => handleGenerateClick()}
+                    onClick={handleGenerateClick}
                     disabled={isLoading}
                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                   >
@@ -167,7 +169,7 @@ const GenerateArchitecturePage = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default GenerateArchitecturePage
+export default GenerateArchitecturePage;
