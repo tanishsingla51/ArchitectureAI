@@ -10,7 +10,7 @@ import clerkMiddleware from './clerk.middleware.js';
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'CLERK_SECRET_KEY', 'GOOGLE_API_KEY'];
+const requiredEnvVars = ['DATABASE_URL', 'CLERK_SECRET_KEY', 'GEMINI_API_KEY'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
