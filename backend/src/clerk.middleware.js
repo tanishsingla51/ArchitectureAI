@@ -1,18 +1,22 @@
+// clerk.middleware.js
 // src/middleware/clerk.middleware.js
 
-import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
+import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 
-// Get Clerk Secret Key from environment variables.
-const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
-
-if (!CLERK_SECRET_KEY) {
-  throw new Error("Missing CLERK_SECRET_KEY in your .env file.");
-}
-
-// Create the Clerk Express middleware using the correct function.
 const clerkMiddleware = ClerkExpressWithAuth({
-  secretKey: CLERK_SECRET_KEY
+  onError: (err, req, res, next) => {
+    console.error('Clerk Middleware Error:', err);
+    res.status(401).json({ message: 'Unauthorized - Clerk error' });
+  },
+  afterAuth: (auth, req, res, next) => {
+    if (!auth.userId) {
+      return res.status(401).json({ message: 'No user ID found in Clerk auth' });
+    }
+
+   // Make userId accessible in route handlers
+    req.userId = auth.userId;
+    next();
+  }
 });
 
-// Export the middleware for use in the main server file.
 export default clerkMiddleware;

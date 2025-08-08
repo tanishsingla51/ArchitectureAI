@@ -2,6 +2,8 @@
 
 import { create } from 'zustand';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 // This store centralizes all the state and actions related to our API calls.
 const useApiStore = create((set, get) => ({
   // --- State Variables ---
@@ -11,6 +13,11 @@ const useApiStore = create((set, get) => ({
   isCopied: false,
   error: null,
   isFallback: false,
+  isChatHistoryLoading: false,
+  isChatHistoryBarOpen: false,
+  chatHistory: [],
+  selectedChat: null,
+  setSelectedChat: (chat) => set({ selectedChat: chat }),
 
   // --- Actions (Functions to modify state) ---
 
@@ -19,7 +26,7 @@ const useApiStore = create((set, get) => ({
 
   // Handles the entire API call flow. It takes the getToken function from Clerk.
   generateSolution: async (getToken) => {
-    const { prompt } = get();
+    const { prompt } = get(); // Get the current prompt from the store.
     if (!prompt) return;
 
     set({
@@ -34,7 +41,9 @@ const useApiStore = create((set, get) => ({
       // Get the session token from Clerk for a secure request.
       const token = await getToken();
 
-      const response = await fetch('http://localhost:8000/api/generate-solution', {
+
+
+      const response = await fetch(`${API_URL}/api/generate-solution`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,6 +94,29 @@ const useApiStore = create((set, get) => ({
       .catch(err => {
         console.error("Failed to copy text: ", err);
       });
+  },
+
+  getChatHistory: async (getToken) => {
+
+    set({ isChatHistoryLoading: true });
+
+    const token = await getToken();
+
+
+    const response = await fetch(`${API_URL}/api/get-chat-history`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    console.log('Fetching from:', `${API_URL}/api/get-chat-history`);
+
+    const data = await response.json();
+    set({ chatHistory: data });
+    set({ isChatHistoryLoading: false });
+
   },
 }));
 

@@ -1,8 +1,4 @@
-// src/api/gemini.service.js
 
-// This service is responsible for all interactions with the Gemini API.
-// Separating this from the controller and routes makes the code cleaner
-// and easier to test.
 
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -44,3 +40,4 @@ export async function generateContentFromPrompt(prompt) {
     throw new Error('An error occurred while generating the solution.');
   }
 }
+

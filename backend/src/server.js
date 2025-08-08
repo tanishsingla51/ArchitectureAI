@@ -1,31 +1,28 @@
-// src/index.js
 
-// This is the main entry point for the entire application.
-// It initializes the Express server and connects all the pieces.
 
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import geminiRoutes from './api/gemini.routes.js';
-import clerkMiddleware from './clerk.middleware.js';
 import dotenv from 'dotenv';
+import clerkMiddleware from './clerk.middleware.js';
 
 dotenv.config();
 
 // Initialize the Express app.x
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// Apply middleware.
 app.use(cors());
 app.use(bodyParser.json());
 
-// Register the API routes.
-// We prefix the routes with '/api'.
-app.use('/api', clerkMiddleware);
-app.use('/api',  geminiRoutes);
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
+
+app.use('/api', clerkMiddleware, geminiRoutes);
 
 // Start the server.
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on http://localhost:${process.env.PORT}`);
+app.listen(process.env.PORT || 8000, () => {
+  console.log(`Server is running on http://localhost:${process.env.PORT || 8000}`);
 });
