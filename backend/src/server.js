@@ -12,7 +12,22 @@ dotenv.config();
 // Initialize the Express app.x
 const app = express();
 
-app.use(cors());
+// CORS configuration for production
+const corsOptions = {
+  origin: [
+    'http://localhost:3000', // Local development
+    'http://localhost:5173', // Vite dev server
+    process.env.FRONTEND_URL, // Your deployed frontend URL
+    'https://*.vercel.app', // Vercel domains
+    'https://*.netlify.app', // Netlify domains
+    'https://*.render.com', // Render domains
+  ].filter(Boolean), // Remove undefined values
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // Health check endpoint
