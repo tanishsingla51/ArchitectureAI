@@ -40,6 +40,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
+// Root endpoint for Railway health check
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'API Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
@@ -64,6 +73,7 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Health check available at: http://localhost:${PORT}/api/health`);
+  console.log(`Root endpoint available at: http://localhost:${PORT}/`);
 }).on('error', (err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
