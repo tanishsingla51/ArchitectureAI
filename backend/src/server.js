@@ -9,29 +9,16 @@ import clerkMiddleware from './clerk.middleware.js';
 
 dotenv.config();
 
-// Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'CLERK_SECRET_KEY', 'GEMINI_API_KEY'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingVars.length > 0) {
-  console.error('Missing required environment variables:', missingVars);
-  console.error('Please set these variables in your Railway dashboard');
-  process.exit(1);
-}
-
 // Initialize the Express app
 const app = express();
 
-// CORS configuration for production
+// CORS configuration
 const corsOptions = {
   origin: [
     'http://localhost:3000', // Local development
     'http://localhost:5173', // Vite dev server
     process.env.FRONTEND_URL, // Your deployed frontend URL
-    'https://*.vercel.app', // Vercel domains
-    'https://*.netlify.app', // Netlify domains
-    'https://*.render.com', // Render domains
-  ].filter(Boolean), // Remove undefined values
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -40,22 +27,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-// Root endpoint for Railway health check
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    message: 'API Server is running',
-    timestamp: new Date().toISOString()
-  });
-});
-
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -67,14 +44,9 @@ app.use((err, req, res, next) => {
 
 app.use('/api', clerkMiddleware, geminiRoutes);
 
-// Start the server with error handling
+// Start the server
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check available at: http://localhost:${PORT}/api/health`);
-  console.log(`Root endpoint available at: http://localhost:${PORT}/`);
-}).on('error', (err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });

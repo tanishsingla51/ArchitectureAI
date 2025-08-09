@@ -100,23 +100,31 @@ const useApiStore = create((set, get) => ({
 
     set({ isChatHistoryLoading: true });
 
-    const token = await getToken();
+    try {
+      
+      const token = await getToken();
 
 
-    const response = await fetch(`${API_URL}/api/get-chat-history`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+      const response = await fetch(`${API_URL}/api/get-chat-history`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      console.log('Fetching from:', `${API_URL}/api/get-chat-history`);
+  
+      const data = await response.json();
+      set({ chatHistory: data });
+      set({ isChatHistoryLoading: false });
+  
 
-    console.log('Fetching from:', `${API_URL}/api/get-chat-history`);
-
-    const data = await response.json();
-    set({ chatHistory: data });
-    set({ isChatHistoryLoading: false });
-
+    } catch (error) {
+      
+      console.error('Error fetching chat history:', error);
+      set({ isChatHistoryLoading: false, chatHistory: [] });
+    }
   },
 }));
 

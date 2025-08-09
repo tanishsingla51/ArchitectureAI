@@ -9,7 +9,7 @@ This application consists of:
 
 ## Deployment Options
 
-### Option 1: Vercel + Railway (Recommended)
+### Option 1: Vercel + Render (Recommended)
 
 #### Frontend Deployment (Vercel)
 
@@ -28,52 +28,40 @@ This application consists of:
    - Set the root directory to `frontend`
    - Add environment variables:
      ```
-     VITE_API_URL=https://your-backend-url.railway.app
+     VITE_API_URL=https://your-backend-url.onrender.com
      VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
      ```
    - Deploy
 
-#### Backend Deployment (Railway)
+#### Backend Deployment (Render)
 
-1. **Deploy to Railway**
-   - Go to [railway.app](https://railway.app)
+1. **Deploy to Render**
+   - Go to [render.com](https://render.com)
    - Sign up/Login with GitHub
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select your repository
+   - Click "New" → "Web Service"
+   - Connect your GitHub repository
    - Set the root directory to `backend`
    - Add environment variables:
      ```
      DATABASE_URL=your_database_url
      CLERK_SECRET_KEY=your_clerk_secret
-     GOOGLE_API_KEY=your_gemini_api_key
+     GEMINI_API_KEY=your_gemini_api_key
      PORT=8000
      ```
    - Deploy
 
 2. **Set up Database**
-   - In Railway dashboard, add a PostgreSQL database
+   - In Render dashboard, add a PostgreSQL database
    - Copy the DATABASE_URL to your environment variables
    - Run migrations:
      ```bash
      npx prisma migrate deploy
      ```
 
-### Option 2: Render (Alternative)
-
-#### Frontend (Render Static Site)
-- Use Render's static site service
-- Build command: `npm run build`
-- Publish directory: `dist`
-
-#### Backend (Render Web Service)
-- Use Render's web service
-- Build command: `npm install && npx prisma generate`
-- Start command: `npm start`
-
-### Option 3: Netlify + Heroku
+### Option 2: Netlify + Heroku
 
 #### Frontend (Netlify)
-- Similar to Vercel process
+- Use Netlify's static site service
 - Build command: `npm run build`
 - Publish directory: `dist`
 
@@ -82,11 +70,27 @@ This application consists of:
 - Add PostgreSQL addon
 - Set environment variables
 
+### Option 3: Local Development
+
+For local development, you can run both services locally:
+
+```bash
+# Backend
+cd backend
+npm install
+npm run dev
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+npm run dev
+```
+
 ## Environment Variables
 
 ### Frontend (.env)
 ```
-VITE_API_URL=https://your-backend-url.com
+VITE_API_URL=http://localhost:8000
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
@@ -94,7 +98,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 DATABASE_URL=postgresql://...
 CLERK_SECRET_KEY=sk_test_...
-GOOGLE_API_KEY=your_gemini_api_key
+GEMINI_API_KEY=your_gemini_api_key
 PORT=8000
 ```
 
@@ -104,7 +108,6 @@ PORT=8000
 2. **Test all functionality** on deployed URLs
 3. **Set up custom domain** (optional)
 4. **Configure monitoring** and logging
-5. **Set up CI/CD** for automatic deployments
 
 ## Troubleshooting
 
@@ -117,7 +120,7 @@ PORT=8000
 ### Debug Commands:
 ```bash
 # Check backend logs
-railway logs
+npm run dev
 
 # Check frontend build
 npm run build
@@ -129,6 +132,6 @@ curl http://localhost:8000/api/health
 ## Cost Estimation
 
 - **Vercel**: Free tier (Hobby) - $0/month
-- **Railway**: Free tier - $0/month (limited usage)
+- **Render**: Free tier - $0/month (limited usage)
 - **Database**: Free tier PostgreSQL available
 - **Total**: ~$0-20/month depending on usage 
