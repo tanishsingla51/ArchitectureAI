@@ -17,7 +17,10 @@ const corsOptions = {
   origin: [
     'http://localhost:3000', // Local development
     'http://localhost:5173', // Vite dev server
-    process.env.FRONTEND_URL, // Your deployed frontend URL
+    'https://architecture-ai-amber.vercel.app', // Your Vercel frontend
+    'https://architecture-ai-eta.vercel.app', // Your other Vercel frontend
+    'https://*.vercel.app', // All Vercel domains
+    process.env.FRONTEND_URL, // Environment variable
   ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
