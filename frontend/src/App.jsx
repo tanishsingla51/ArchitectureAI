@@ -55,7 +55,7 @@ function App() {
       <MainPage /> 
       
     <GenerateArchitecturePage />
-     
+    
        <Footer />
     </div>
   );

@@ -1,5 +1,6 @@
 
 
+
 import dotenv from 'dotenv';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -12,32 +13,34 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
 // This is the core function that generates content from a prompt.
 export async function generateContentFromPrompt(prompt) {
-  // We specify the prompt with instructions for the AI to generate a backend.
-  // This new prompt is more complex, asking for a structured response.
+  // This new prompt is simplified, direct, and unambiguous.
   const apiPrompt = `
-    You are a senior backend developer. Your task is to generate a complete backend application with a clear file structure based on the user's prompt.
+    You are an expert senior backend developer. Your task is to generate the file and code structure for a complete backend application based on the user's request.
 
-    Please follow these instructions carefully:
-    1. First, provide a file structure layout in Markdown, using tree-like formatting.
-    2. After the file structure, provide the code for each file, with the file path clearly labeled as a Markdown heading (e.g., ### src/index.js).
-    3. For each code block, use the appropriate language syntax highlighting (e.g., \`\`\`javascript).
-    4. The server must use the frameworks and technologies mentioned in the user's prompt.
-    5. The response should be a single, complete Markdown document. Do not include any conversational text outside of the file labels and code blocks.
+    Your response MUST be a single, valid JSON array of objects, and nothing else. Do not include any text, explanation, or markdown formatting outside of the JSON.
 
-    User's prompt: "${prompt}"
+    Each object in the array must represent a file and have the following structure:
+    - "filePath": A string representing the relative path of the file (e.g., "src/app.js").
+    - "content": A string containing the full source code for that file.
+
+    Crucially, the "content" string must be properly escaped to be valid in JSON. Pay special attention to escaping all newline characters as "\\n" and all double quotes as "\\"".
+
+    User's request: "${prompt}"
   `;
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+    // IMPORTANT: "gemini-2.5-pro" is not a valid model name.
+    // Use a valid model like "gemini-1.5-pro-latest".
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const result = await model.generateContent(apiPrompt);
     const response = await result.response;
+    // The result should now be a clean JSON string, ready to be parsed.
     return response.text();
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    throw new Error('An error occurred while generating the solution.');
+    // It's helpful to include the error message for better debugging.
+    throw new Error(`An error occurred while generating the solution: ${error.message}`);
   }
 }
-

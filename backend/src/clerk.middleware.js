@@ -1,22 +1,32 @@
-// clerk.middleware.js
-// src/middleware/clerk.middleware.js
-
+// backend/middleware/clerk.middleware.js
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 
-const clerkMiddleware = ClerkExpressWithAuth({
+/**
+ * Clerk middleware to protect routes
+ * - Verifies session using Clerk tokens
+ * - Attaches auth info (userId, sessionId, orgId) to req.auth
+ */
+export const clerkMiddleware = ClerkExpressWithAuth({
   onError: (err, req, res, next) => {
-    console.error('Clerk Middleware Error:', err);
-    res.status(401).json({ message: 'Unauthorized - Clerk error' });
+    console.error("❌ Clerk Middleware Error:", err.message);
+    res.status(401).json({ error: "Unauthorized - Invalid Clerk token" });
   },
   afterAuth: (auth, req, res, next) => {
     if (!auth.userId) {
-      return res.status(401).json({ message: 'No user ID found in Clerk auth' });
+      console.warn("⚠️ No userId found in request.");
+      return res.status(401).json({ error: "Unauthorized - No valid user" });
     }
 
-   // Make userId accessible in route handlers
-    req.userId = auth.userId;
-    next();
-  }
-});
+    // Attach auth info to request for downstream routes
 
-export default clerkMiddleware;
+    console.log("✅ Clerk Middleware");  
+
+    req.auth = {
+      userId: auth.userId,
+      sessionId: auth.sessionId,
+      orgId: auth.orgId,
+    };
+
+    next();
+  },
+});

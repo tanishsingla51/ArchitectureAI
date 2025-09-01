@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-inity
 
 generator client {
   provider = "prisma-client-js"
@@ -16,10 +16,15 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   clerkUserId   String    @unique // ID from Clerk
-  email         String?
   name          String?
+  githubEmail String?  @unique
+  githubId    String?     @unique
+  username    String?  @unique
+  avatarUrl   String?
+  githubToken     String?  // store encrypted GitHub access_token
   createdAt     DateTime  @default(now())
-  chatHistories Chat[]    // One-to-many relation
+  chatHistories Chat[] // One-to-many relation
+  githubRepoUrls String[] 
 }
 
 model Chat {
@@ -30,3 +35,5 @@ model Chat {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
+
+
