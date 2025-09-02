@@ -7,7 +7,6 @@ import { generateSolution, getChatHistory } from './gemini.controller.js';
 
 const router = Router();
 
-
 router.post('/generate-solution', generateSolution);
 
 router.get('/get-chat-history', getChatHistory);

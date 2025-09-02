@@ -1,12 +1,19 @@
-import React from 'react';
-import { Copy, Check, Sparkles, AlertCircle } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import useApiStore from '../store/apiStore.js';
-import { useAuth, useClerk } from '@clerk/clerk-react';
-import { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from "react";
+import {
+  Copy,
+  Check,
+  Sparkles,
+  AlertCircle,
+  FileText,
+  Folder,
+  ChevronDown,
+  Send,
+} from "lucide-react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import useApiStore from "../store/apiStore.js";
+import { useAuth, useClerk } from "@clerk/clerk-react";
+import GithubLoginButton from "../components/GithubLoginButton.jsx";
+import { oneDark } from "https://esm.sh/react-syntax-highlighter/dist/esm/styles/prism";
 
 const GenerateArchitecturePage = () => {
   const {
@@ -15,159 +22,355 @@ const GenerateArchitecturePage = () => {
     isLoading,
     isCopied,
     error,
-    isFallback,
     setPrompt,
     generateSolution,
-    handleCopy
+    handleCopy,
   } = useApiStore();
 
-        const { isSignedIn, getToken } = useAuth();
-        const { openSignIn } = useClerk();
+  const { isSignedIn, getToken } = useAuth();
+  const { openSignIn } = useClerk();
 
-      useEffect(() => {
-        const savedPrompt = localStorage.getItem('userPrompt');
-        if (savedPrompt) {
-          setPrompt(savedPrompt);
-          localStorage.removeItem('userPrompt');
-        }
-      }, []);
+  const [displayedFiles, setDisplayedFiles] = useState([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [copiedFiles, setCopiedFiles] = useState(new Set());
+  const [expandedFiles, setExpandedFiles] = useState(new Set());
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const resultRef = useRef(null);
+  const animationFrameId = useRef(null);
 
-      const handleGenerateClick = () => {
-        if (!isSignedIn) {
-          localStorage.setItem('userPrompt', prompt);
-          openSignIn();
+  useEffect(() => {
+    return () => {
+      if (animationFrameId.current) clearTimeout(animationFrameId.current);
+    };
+  }, [solution]);
+
+  useEffect(() => {
+    if (solution) {
+      let solutionArray = [];
+      try {
+        const jsonMatch = solution.match(/```json\s*([\s\S]*?)\s*```/);
+        const jsonString = jsonMatch ? jsonMatch[1] : solution;
+        const cleanedJsonString = jsonString.replace(/\u00A0/g, " ").trim();
+        solutionArray = JSON.parse(cleanedJsonString);
+        if (!Array.isArray(solutionArray)) throw new Error("Parsed data is not an array.");
+      } catch (err) {
+        console.error("❌ Failed to parse JSON:", err);
+        return;
+      }
+
+      setDisplayedFiles([]);
+      setCurrentFileIndex(0);
+      setIsTypingComplete(false);
+      setCopiedFiles(new Set());
+      setExpandedFiles(new Set([0, 1]));
+
+      if (resultRef.current) {
+        resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      let fileIndex = 0;
+      let charIndex = 0;
+      const typingSpeed = 5;
+
+      const typeNextChar = () => {
+        if (fileIndex >= solutionArray.length) {
+          setIsTypingComplete(true);
           return;
         }
-        generateSolution(getToken);
+        const currentFile = solutionArray[fileIndex];
+        const currentContent = currentFile.content || "";
+        if (charIndex === 0) {
+          setCurrentFileIndex(fileIndex);
+          setDisplayedFiles((prev) => [
+            ...prev,
+            { filename: currentFile.filePath || `file-${fileIndex}`, content: "" },
+          ]);
+        }
+        if (charIndex < currentContent.length) {
+          setDisplayedFiles((prev) => {
+            const newFiles = [...prev];
+            if (newFiles[fileIndex]) {
+              newFiles[fileIndex] = {
+                ...newFiles[fileIndex],
+                content: currentContent.substring(0, charIndex + 1),
+              };
+            }
+            return newFiles;
+          });
+          charIndex++;
+        } else {
+          fileIndex++;
+          charIndex = 0;
+        }
+        animationFrameId.current = setTimeout(typeNextChar, typingSpeed);
       };
 
+      animationFrameId.current = setTimeout(typeNextChar, 100);
+    }
+  }, [solution]);
+
+  useEffect(() => {
+    const savedPrompt = localStorage.getItem("userPrompt");
+    if (savedPrompt) {
+      setPrompt(savedPrompt);
+      localStorage.removeItem("userPrompt");
+    }
+  }, [setPrompt]);
+
+  const handleGenerateClick = () => {
+    if (!isSignedIn) {
+      localStorage.setItem("userPrompt", prompt);
+      openSignIn();
+      return;
+    }
+    generateSolution(getToken);
+  };
+
+  const handleFileCopy = async (content, index) => {
+    await navigator.clipboard.writeText(content);
+    setCopiedFiles((prev) => new Set(prev).add(index));
+    setTimeout(() => {
+      setCopiedFiles((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }, 2000);
+  };
+
+  const toggleFileExpansion = (index) => {
+    setExpandedFiles((prev) => {
+      const newSet = new Set(prev);
+      newSet.has(index) ? newSet.delete(index) : newSet.add(index);
+      return newSet;
+    });
+  };
+
+  const getLanguageFromFilename = (filename = "") => {
+    const ext = filename.split(".").pop().toLowerCase();
+    const langMap = {
+      js: "javascript",
+      jsx: "javascript",
+      ts: "typescript",
+      tsx: "typescript",
+      json: "json",
+      py: "python",
+      java: "java",
+      cpp: "cpp",
+      c: "c",
+      php: "php",
+      rb: "ruby",
+      go: "go",
+      rs: "rust",
+      sql: "sql",
+      html: "html",
+      css: "css",
+      scss: "scss",
+      yaml: "yaml",
+      yml: "yaml",
+      xml: "xml",
+      md: "markdown",
+      sh: "bash",
+      env: "bash",
+      gitignore: "gitignore",
+    };
+    return langMap[ext] || "text";
+  };
+
+  const getFileIcon = (filename = "") => {
+    const ext = filename.split(".").pop().toLowerCase();
+    const iconMap = {
+      js: "JS",
+      jsx: "JS",
+      ts: "TS",
+      tsx: "TS",
+      json: "{}",
+      py: "PY",
+      md: "MD",
+      html: "</>",
+      css: "#",
+    };
+    if (filename.includes("/"))
+      return <Folder className="h-4 w-4 text-blue-400" />;
+    if (iconMap[ext])
+      return <span className="text-xs font-mono w-4 text-center font-bold text-blue-400">{iconMap[ext]}</span>;
+    return <FileText className="h-4 w-4 text-gray-400" />;
+  };
+
   return (
-    <div>
-      <section id="generator" className="bg-gray-50 py-16 md:py-20 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl border border-gray-700 p-6 md:p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/20 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-400/20 to-transparent rounded-full blur-2xl"></div>
+    <div className="h-screen flex flex-col bg-neutral-800 text-white">
+     
 
-            <div className="relative z-10">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Generate Your Architecture</h2>
-                <p className="text-gray-300 text-sm md:text-base">Describe your backend needs and get instant results</p>
-              </div>
-
-              <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-3">
-                Describe your backend architecture:
-              </label>
-              <textarea
-                id="prompt"
-                className="w-full h-28 md:h-32 bg-gray-800/80 text-white rounded-2xl p-4 mb-5 focus:ring-2 focus:ring-green-500 focus:outline-none transition-all duration-300 resize-none border border-gray-600/60 placeholder-gray-400 text-sm"
-                placeholder="e.g., Create a user API with CRUD operations using Node.js, Express, and Prisma with a PostgreSQL database."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              ></textarea>
-
-              <button
-                onClick={handleGenerateClick}
-                disabled={isLoading || !prompt}
-                className={`w-full flex items-center justify-center py-3 md:py-4 px-6 rounded-2xl font-semibold text-base md:text-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50
-                  ${isLoading || !prompt ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transform hover:-translate-y-1 active:scale-95 shadow-lg hover:shadow-xl'}`}
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Generate Architecture
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="mt-6 bg-red-900/90 backdrop-blur-sm border border-red-700/60 text-red-200 p-4 rounded-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  <p className="font-semibold">Error:</p>
-                </div>
-                {(error.includes('overloaded') || error.includes('Rate limit')) && (
-                  <button
-                    onClick={handleGenerateClick}
-                    disabled={isLoading}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                  >
-                    {isLoading ? 'Retrying...' : 'Retry'}
-                  </button>
-                )}
-              </div>
-              <p className="mt-1 text-sm">{error}</p>
+      {/* 🔹 Main Scrollable Area */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-16 pb-28 space-y-6">
+        <div className="max-w-3xl mx-auto w-full">
+          {!solution && !isLoading && (
+            <div className="flex flex-col items-center justify-center text-center mt-20">
+              <Sparkles className="h-10 w-10 text-green-400 mb-4" />
+              <h2 className="text-2xl font-semibold">Generate Backend Architecture</h2>
+              <p className="text-gray-400 text-sm mt-2">
+                Describe your application requirements below to get started.
+              </p>
             </div>
           )}
 
-          {solution && (
-            <div className="mt-6 bg-gray-800/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-600/20 overflow-hidden">
-              <div className="flex justify-between items-center bg-gradient-to-r from-gray-700 to-gray-800/80 px-6 py-4 border-b border-gray-600/60">
-                <div className="flex items-center">
-                  <h2 className="text-xl font-bold text-white">Generated Architecture</h2>
-                  {isFallback && (
-                    <span className="ml-3 px-2 py-1 bg-yellow-600/80 text-yellow-100 text-xs rounded-lg font-medium">
-                      Fallback Response
-                    </span>
-                  )}
+          {error && (
+            <div className="bg-red-900/30 text-red-300 p-4 rounded-xl border border-red-800 shadow-lg flex items-center gap-3">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {(isLoading || displayedFiles.length > 0) && (
+            <div ref={resultRef} className="space-y-4">
+              {isLoading && displayedFiles.length === 0 && (
+                <div className="flex items-center gap-3 p-6 bg-neutral-800/70 backdrop-blur-md rounded-xl border border-neutral-700 shadow-md">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-gray-300">Generating your architecture...</span>
                 </div>
-                <button
-                  onClick={handleCopy}
-                  className={`py-2 px-4 rounded-xl text-sm font-medium transition-colors duration-300 flex items-center
-                    ${isCopied ? 'bg-green-500 text-white shadow-lg' : 'bg-gray-600/80 text-gray-300 hover:bg-gray-500/80'}`}
-                >
-                  {isCopied ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" /> Copy All
-                    </>
-                  )}
-                </button>
-              </div>
-              <div className="p-6 overflow-auto max-h-[60vh] markdown-content text-gray-200">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    code({ inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      return !inline && match ? (
-                        <SyntaxHighlighter
-                          style={dracula}
-                          language={match[1]}
-                          PreTag="div"
-                          {...props}
+              )}
+
+              {displayedFiles.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm text-gray-300">
+                    <span>
+                      {isTypingComplete
+                        ? `${displayedFiles.length} files generated`
+                        : `Generating file ${currentFileIndex + 1}...`}
+                    </span>
+                    <div className="flex gap-3">
+                      {isTypingComplete && (
+                        <button
+                          onClick={() => {
+                            if (expandedFiles.size === displayedFiles.length)
+                              setExpandedFiles(new Set());
+                            else setExpandedFiles(new Set(displayedFiles.map((_, i) => i)));
+                          }}
+                          className="hover:text-white"
                         >
-                          {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                      ) : (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                  }}
-                >
-                  {solution}
-                </ReactMarkdown>
-              </div>
+                          {expandedFiles.size === displayedFiles.length
+                            ? "Collapse All"
+                            : "Expand All"}
+                        </button>
+                      )}
+                      <GithubLoginButton />
+                      <button
+                        onClick={() => handleCopy(solution)}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-md ${
+                          isCopied
+                            ? "bg-green-600 text-white"
+                            : "bg-neutral-700 hover:bg-neutral-600"
+                        }`}
+                      >
+                        {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                        {isCopied ? "Copied!" : "Copy All"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {displayedFiles.map((file, index) => {
+                    const isExpanded = expandedFiles.has(index);
+                    const isCopiedFile = copiedFiles.has(index);
+                    const language = getLanguageFromFilename(file.filename);
+
+                    return (
+                      <div
+                        key={index}
+                        className="bg-neutral-900/70 backdrop-blur-md border border-neutral-700 rounded-xl shadow-lg"
+                      >
+                        <div
+                          onClick={() => toggleFileExpansion(index)}
+                          className="flex justify-between items-center px-4 py-2 cursor-pointer hover:bg-neutral-800/60"
+                        >
+                          <div className="flex items-center gap-2">
+                            {getFileIcon(file.filename)}
+                            <span className="text-sm font-mono">{file.filename}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFileCopy(file.content, index);
+                              }}
+                              className={`p-1 rounded ${
+                                isCopiedFile
+                                  ? "bg-green-600 text-white"
+                                  : "hover:bg-neutral-600 text-gray-300"
+                              }`}
+                            >
+                              {isCopiedFile ? <Check size={12} /> : <Copy size={12} />}
+                            </button>
+                            <ChevronDown
+                              size={14}
+                              className={`transition-transform ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <SyntaxHighlighter
+                            language={language}
+                            style={oneDark}
+                            showLineNumbers
+                            customStyle={{
+                              margin: 0,
+                              background: "#1e1f25",
+                              fontSize: "13px",
+                              padding: "16px",
+                              borderRadius: "0 0 12px 12px",
+                            }}
+                          >
+                            {file.content}
+                          </SyntaxHighlighter>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
-      </section>
+      </div>
+
+      {/* 🔹 Fixed Input Section */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-neutral-700 bg-neutral-800/80 backdrop-blur-md p-4">
+        <div className="max-w-3xl mx-auto flex items-end gap-2">
+          <textarea
+            className="flex-1 bg-neutral-900/90 border border-neutral-700 text-white rounded-lg p-3 resize-none text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+            placeholder="Message ArchitectureAI..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleGenerateClick();
+              }
+            }}
+            rows={1}
+          />
+          <button
+            onClick={handleGenerateClick}
+            disabled={isLoading || !prompt.trim()}
+            className={`p-3 rounded-lg shadow ${
+              isLoading || !prompt.trim()
+                ? "bg-gray-600 text-gray-400"
+                : "bg-green-500 hover:bg-green-600 text-white"
+            }`}
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send size={16} />
+            )}
+          </button>
+        </div>
+        <div className="max-w-3xl mx-auto mt-1 text-xs text-gray-400 flex justify-between">
+          <span>{prompt.length} characters</span>
+          <span>⌘ + Enter to send</span>
+        </div>
+      </div>
     </div>
   );
 };

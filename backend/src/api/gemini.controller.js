@@ -1,28 +1,35 @@
 import { PrismaClient } from '@prisma/client';
 import { generateContentFromPrompt } from './gemini.service.js';
+import { clerkClient } from '@clerk/express';
 
 const prisma = new PrismaClient();
 
 export const generateSolution = async (req, res) => {
   try {
 
-    console.log("hello from generate solution")
+    //  console.log("hello from generate solution")
 
     const { prompt } = req.body;
 
     const clerkUserId = req.auth?.userId;  // ✅ FIXED
-
+    
     if (!clerkUserId) {
+      console.log("No clerkUserId found in request");
       return res.status(401).json({ message: 'Unauthorized' });
     }
+
+    // console.log("Authenticated userId from Clerk:", clerkUserId);
 
     let user = await prisma.user.findUnique({
       where: { clerkUserId },
     });
 
     if (!user) {
+
+
       user = await prisma.user.create({
         data: { clerkUserId },
+
       });
     }
 
@@ -32,6 +39,8 @@ export const generateSolution = async (req, res) => {
       return res.status(500).json({ error: 'No content was returned from the API.' });
     }
 
+    // console.log(solution);
+
     const newChat = await prisma.chat.create({
       data: {
         prompt,
@@ -39,10 +48,6 @@ export const generateSolution = async (req, res) => {
         userId: user.id,
       },
     });
-
-    console.log(user);
-
-    // console.log(newChat);
 
     res.status(200).json({ solution });
   } catch (error) {
@@ -54,6 +59,8 @@ export const generateSolution = async (req, res) => {
 export const getChatHistory = async (req, res) => {
   try {
     const clerkUserId = req.auth?.userId;  // ✅ FIXED
+
+    // console.log("Clerk User Email:", email);
 
     if (!clerkUserId) {
       return res.status(401).json({ message: 'Unauthorized' });

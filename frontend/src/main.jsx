@@ -7,6 +7,8 @@ import { neobrutalism } from '@clerk/themes';
 
 const PUBLIC_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
+console.log("Clerk Publishable Key:", PUBLIC_KEY);
+
 if (!PUBLIC_KEY) {
   throw new Error('Missing Publishable Key');
 }

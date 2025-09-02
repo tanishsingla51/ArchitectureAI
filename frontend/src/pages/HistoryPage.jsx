@@ -1,5 +1,5 @@
-import React from 'react';
-import ChatHistory from '../components/ChatHistory'; // Adjust the path as needed
+import React from "react";
+import ChatHistory from "../components/ChatHistory"; // Adjust the path as needed
 
 export default function HistoryPage() {
   return (

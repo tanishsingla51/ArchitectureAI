@@ -1,11 +1,12 @@
-
-
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import geminiRoutes from './api/gemini.routes.js';
 import dotenv from 'dotenv';
-import clerkMiddleware from './clerk.middleware.js';
+import {clerkMiddleware , requireAuth} from './clerk.middleware.js';
+import authRoutes from './api/auth.routes.js';
+import githubRoutes from './api/github.routes.js';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -25,8 +26,10 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  Headers: true,
 };
 
+app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
@@ -45,7 +48,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.use('/api', clerkMiddleware, geminiRoutes);
+app.use(clerkMiddleware);
+
+app.use('/api', requireAuth , geminiRoutes);
+app.use('/api/auth' , requireAuth , authRoutes);
+app.use("/api/github", requireAuth , githubRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 8000;
