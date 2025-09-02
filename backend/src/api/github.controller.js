@@ -22,14 +22,14 @@ export const createRepoAndPushCode = async (req, res) => {
     const clerkUserId = req.auth?.userId; // ✅ FIXED
 
     if (!clerkUserId) {
-      console.log("No clerkUserId found in request");
+      // console.log("No clerkUserId found in request");
       return res.status(400).json({
         success: false,
         error: "Missing userId",
       });
     }
 
-    console.log("Creating repo for user:", clerkUserId);
+    // console.log("Creating repo for user:", clerkUserId);
 
     // Get user from DB
     const user = await prisma.user.findUnique({
@@ -107,7 +107,7 @@ export const createRepoAndPushCode = async (req, res) => {
       owner,
     });
   } catch (error) {
-    console.error("Error creating repo & pushing code:", error);
+    // console.error("Error creating repo & pushing code:", error);
     return res.status(500).json({
       success: false,
       error: "Failed to create repo and push code",

@@ -1,12 +1,19 @@
 import dotenv from "dotenv";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
-import { clerkClient } from "@clerk/express";
 
 dotenv.config();
 const prisma = new PrismaClient();
 
 export const redirectToGithub = async (req, res) => {
+
+  const userId = req.auth?.userId;
+
+  if (!userId) {
+    return res.status(401).json({ error: "User not authenticated" });
+  }
+
+  // console.log("Authenticated userId from Clerk:", userId);
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const redirectUri = process.env.GITHUB_REDIRECT_URI;
@@ -27,9 +34,11 @@ export const githubCallback = async (req, res) => {
     try {
 
       const { code } = req.query;
-
-      const userId =  
+      const userId = req.auth?.userId;
       
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
 
       console.log("Authenticated userId from Clerk:", userId);
   
@@ -54,6 +63,8 @@ export const githubCallback = async (req, res) => {
   
       const githubUser = userRes.data;
 
+      console.log("GitHub User:", githubUser);
+
       // 3. Fetch email if missing
       let email = githubUser.email;
       if (!email) {
@@ -77,7 +88,7 @@ export const githubCallback = async (req, res) => {
       },
     });
   
-      console.log("✅ Updated user with GitHub details:", updatedUser);
+      // console.log("✅ Updated user with GitHub details:", updatedUser);
   
       // 5. Redirect back to frontend
       return res.redirect(`${process.env.FRONTEND_URL}/dashboard?login=success`);

@@ -1,30 +1,35 @@
 // Navbar.jsx
-import React from 'react'
-import Login from './Login'
+import React from "react";
+import { Menu } from "lucide-react"; // Sidebar toggle icon
+import Login from "./Login";
 
 const Navbar = ({ toggleSidebar }) => {
-
   return (
-    <header className="border-b border-gray-100">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <button className="flex items-center" onClick={toggleSidebar}>
-            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-sm"></div>
+        <div className="flex justify-between items-center h-14">
+          {/* Left Side: Sidebar Toggle + Logo */}
+          <div className="flex items-center">
+            {/* Sidebar Toggle Button */}
+            <button
+              onClick={toggleSidebar}
+              className="rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Menu />
+            </button>
+
+            {/* Logo */}
+            <div className="flex items-center ml-3">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow">
+                <div className="w-4 h-4 bg-black rounded-sm"></div>
+              </div>
+              <span className="ml-2 text-lg font-semibold text-gray-900 dark:text-white">
+                ArchitectAI
+              </span>
             </div>
-            <span className="ml-2 text-xl font-semibold text-gray-900">ArchitectAI</span>
-          </button>
+          </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <a href="#" className="text-gray-700 hover:text-gray-900">Product</a>
-            <a href="#" className="text-gray-700 hover:text-gray-900">Features</a>
-            <a href="#" className="text-gray-700 hover:text-gray-900">Marketplace</a>
-            <a href="#" className="text-gray-700 hover:text-gray-900">Company</a>
-          </nav>
-
-          {/* Login Button */}
+          {/* Right Side: Login */}
           <Login />
         </div>
       </div>

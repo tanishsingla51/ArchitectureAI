@@ -3,9 +3,10 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import geminiRoutes from './api/gemini.routes.js';
 import dotenv from 'dotenv';
-import {clerkMiddleware} from './clerk.middleware.js';
+import {clerkMiddleware , requireAuth} from './clerk.middleware.js';
 import authRoutes from './api/auth.routes.js';
 import githubRoutes from './api/github.routes.js';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ const corsOptions = {
   Headers: true,
 };
 
+app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
@@ -48,9 +50,9 @@ app.use((err, req, res, next) => {
 
 app.use(clerkMiddleware);
 
-app.use('/api',geminiRoutes);
-app.use('/api/auth' , authRoutes);
-app.use("/api/github", githubRoutes);
+app.use('/api', requireAuth , geminiRoutes);
+app.use('/api/auth' , requireAuth , authRoutes);
+app.use("/api/github", requireAuth , githubRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 8000;

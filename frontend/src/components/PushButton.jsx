@@ -28,15 +28,15 @@ export default function PushCodeButton() {
         // Solution is already an array
         console.log("✅ Solution is already an array");
         solutionArray = solution;
-      } else if (typeof solution === 'string') {
+      } else if (typeof solution === "string") {
         // Solution might be JSON string wrapped in markdown
         console.log("Solution is a string, attempting to parse...");
-        
+
         try {
           // Try to extract JSON from markdown code block
           const jsonMatch = solution.match(/```json\s*([\s\S]*?)\s*```/);
           const jsonString = jsonMatch ? jsonMatch[1] : solution;
-          
+
           const parsed = JSON.parse(jsonString);
           if (Array.isArray(parsed)) {
             console.log("✅ Successfully parsed JSON array from string");
@@ -44,12 +44,15 @@ export default function PushCodeButton() {
           } else {
             throw new Error("Parsed JSON is not an array");
           }
-        // eslint-disable-next-line no-unused-vars
+          // eslint-disable-next-line no-unused-vars
         } catch (parseError) {
-            
-          console.log("❌ Failed to parse as JSON, falling back to markdown parser");
+          console.log(
+            "❌ Failed to parse as JSON, falling back to markdown parser",
+          );
           // Fallback to original markdown parsing (if you still want to support it)
-          const { parseSolutionMarkdown } = await import("../../parseSolution.js");
+          const { parseSolutionMarkdown } = await import(
+            "../../parseSolution.js"
+          );
           solutionArray = parseSolutionMarkdown(solution);
         }
       } else {
@@ -65,11 +68,11 @@ export default function PushCodeButton() {
 
       const payload = {
         solution: {
-          files: solutionArray.map(file => ({
-            path: file.filePath || file.filename || file.path,   // Handle different property names
+          files: solutionArray.map((file) => ({
+            path: file.filePath || file.filename || file.path, // Handle different property names
             content: file.content,
-          }))
-        }
+          })),
+        },
       };
 
       console.log("Payload to be sent:", payload);
@@ -110,7 +113,12 @@ export default function PushCodeButton() {
       {repoUrl && (
         <p className="mt-2 text-green-600">
           ✅ Repo created!{" "}
-          <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="underline">
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
             View on GitHub
           </a>
         </p>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { SignInButton } from '@clerk/clerk-react';
+import React from "react";
+import { SignInButton } from "@clerk/clerk-react";
 
 const PopUp = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -9,9 +9,23 @@ const PopUp = ({ isOpen, onClose }) => {
       <div className="bg-gray-800 rounded-3xl shadow-xl border border-gray-700 p-8 w-full max-w-sm">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-xl text-white">Sign In Required</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
             </svg>
           </button>
         </div>

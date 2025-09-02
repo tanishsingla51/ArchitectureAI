@@ -7,18 +7,18 @@ const prisma = new PrismaClient();
 export const generateSolution = async (req, res) => {
   try {
 
-     console.log("hello from generate solution")
+    //  console.log("hello from generate solution")
 
     const { prompt } = req.body;
 
     const clerkUserId = req.auth?.userId;  // ✅ FIXED
-
+    
     if (!clerkUserId) {
       console.log("No clerkUserId found in request");
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    console.log("Authenticated userId from Clerk:", clerkUserId);
+    // console.log("Authenticated userId from Clerk:", clerkUserId);
 
     let user = await prisma.user.findUnique({
       where: { clerkUserId },
@@ -39,7 +39,7 @@ export const generateSolution = async (req, res) => {
       return res.status(500).json({ error: 'No content was returned from the API.' });
     }
 
-    console.log(solution);
+    // console.log(solution);
 
     const newChat = await prisma.chat.create({
       data: {
@@ -60,10 +60,7 @@ export const getChatHistory = async (req, res) => {
   try {
     const clerkUserId = req.auth?.userId;  // ✅ FIXED
 
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    const email = clerkUser?.emailAddresses?.[0]?.emailAddress || "unknown";
-
-    console.log("Clerk User Email:", email);
+    // console.log("Clerk User Email:", email);
 
     if (!clerkUserId) {
       return res.status(401).json({ message: 'Unauthorized' });
