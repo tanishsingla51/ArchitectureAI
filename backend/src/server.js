@@ -51,7 +51,7 @@ app.use((err, req, res, next) => {
 app.use(clerkMiddleware);
 
 app.use('/api', requireAuth , geminiRoutes);
-app.use('/api/auth' , requireAuth , authRoutes);
+app.use('/api/auth' , authRoutes);
 app.use("/api/github", requireAuth , githubRoutes);
 
 // Start the server

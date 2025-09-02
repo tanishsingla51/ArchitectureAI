@@ -75,6 +75,6 @@ export const requireAuth = (req, res, next) => {
     return res.status(401).json({ error: "Unauthorized - Please sign in" });
   }
   
-  // console.log("✅ User authenticated:", req.auth.userId);
+   console.log("✅ User authenticated:", req.auth.userId);
   next();
 };
