@@ -9,6 +9,8 @@ const GithubLoginButton = () => {
   // This now uses Clerk's actual authentication state
   const { isSignedIn } = useAuth();
 
+  const BACKEND_URI = import.meta.env.BACKEND_URL
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("login") === "success") {
@@ -20,7 +22,7 @@ const GithubLoginButton = () => {
 
   const handleLogin = () => {
     // This URL is correct and points to your backend to initiate the flow.
-    const backendUrl = "http://localhost:8000/api/auth/github";
+    const backendUrl = `${BACKEND_URI}/api/auth/github`;
     console.log(`Attempting to navigate to: ${backendUrl}`);
     window.location.href = backendUrl;
   };
