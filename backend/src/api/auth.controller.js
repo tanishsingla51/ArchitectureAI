@@ -118,6 +118,8 @@ export const redirectToGithub = async (req, res) => {
   const authState = req.cookies?.github_auth_state;
   let state = authState;
 
+  console.log("hello from redirect to github");
+
   const userId = req.auth?.userId;
   
   // If no stored state, create one (fallback for direct access)
