@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import geminiRoutes from './api/gemini.routes.js';
 import dotenv from 'dotenv';
-import {clerkMiddleware , requireAuth} from './clerk.middleware.js';
+import {clerkMiddleware} from './clerk.middleware.js';
 import authRoutes from './api/auth.routes.js';
 import githubRoutes from './api/github.routes.js';
 import cookieParser from 'cookie-parser';
@@ -61,9 +61,9 @@ app.get('/api/health', (req, res) => {
 app.use(clerkMiddleware);
 
 // Routes
-app.use('/api', requireAuth, geminiRoutes);
+app.use('/api', geminiRoutes);
 app.use('/api/auth', authRoutes); // No requireAuth here since it includes login routes
-app.use('/api/github', requireAuth, githubRoutes);
+app.use('/api/github', githubRoutes);
 
 // Basic error handling middleware (should be after routes)
 app.use((err, req, res, next) => {
