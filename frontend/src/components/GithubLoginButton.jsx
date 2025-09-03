@@ -72,25 +72,9 @@ const GithubLoginButton = () => {
         throw new Error('No authentication token available');
       }
 
-      // Store the token in a secure cookie before redirecting
-      const response = await fetch(`${API_URL}/api/auth/github/prepare`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          redirectUrl: window.location.origin + window.location.pathname 
-        }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to prepare GitHub authentication');
-      }
-
-      // Redirect to your existing GitHub OAuth endpoint
-      window.location.href = `${API_URL}/api/auth/github`;
+      // Pass the token as a URL parameter (more reliable than cookies for redirects)
+      const redirectUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+      window.location.href = `${API_URL}/api/auth/github?token=${token}&redirectUrl=${redirectUrl}`;
       
     } catch (error) {
       console.error('GitHub login error:', error);

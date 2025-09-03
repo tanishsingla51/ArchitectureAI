@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
+import { verifyToken } from "@clerk/backend";
 
 dotenv.config();
 const prisma = new PrismaClient();
@@ -42,44 +43,6 @@ export const checkGithubStatus = async (req, res) => {
   }
 };
 
-// Prepare authentication (store user context before redirect)
-export const prepareAuth = async (req, res) => {
-  try {
-    const userId = req.auth?.userId;
-    const { redirectUrl } = req.body;
-    
-    if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
-    }
-
-    // Generate a unique state for this auth attempt
-    const state = generateRandomState();
-    
-    // Store user context temporarily
-    authStates.set(state, {
-      userId,
-      redirectUrl: redirectUrl || process.env.FRONTEND_URL,
-      timestamp: Date.now()
-    });
-    
-    // Clean up old states (older than 10 minutes)
-    cleanupOldStates();
-    
-    // Store state in a secure cookie for the redirect
-    res.cookie('github_auth_state', state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 10 * 60 * 1000 // 10 minutes
-    });
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error preparing GitHub auth:', error);
-    res.status(500).json({ error: 'Failed to prepare GitHub authentication' });
-  }
-};
-
 // Disconnect GitHub
 export const disconnectGithub = async (req, res) => {
   try {
@@ -111,40 +74,66 @@ export const disconnectGithub = async (req, res) => {
   }
 };
 
-// Updated redirectToGithub to use stored state
 export const redirectToGithub = async (req, res) => {
+  try {
+    console.log("hello from redirect to github");
+    
+    // Get token and redirectUrl from query parameters
+    const { token, redirectUrl } = req.query;
+    let userId = null;
 
-  // Check if we have a stored state from prepare-auth
-  const authState = req.cookies?.github_auth_state;
-  let state = authState;
+    // Verify the token if provided
+    if (token) {
+      try {
+        const payload = await verifyToken(token, {
+          secretKey: process.env.CLERK_SECRET_KEY,
+        });
+        userId = payload.sub;
+        console.log("✅ Token verified, userId:", userId);
+      } catch (error) {
+        console.error("❌ Token verification failed:", error);
+        return res.status(401).json({ error: "Invalid token" });
+      }
+    } else {
+      // Fallback to middleware auth
+      userId = req.auth?.userId;
+    }
 
-  console.log("hello from redirect to github");
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
-  const userId = req.auth?.userId;
-  
-  // If no stored state, create one (fallback for direct access)
-  if (!authState) {
-    state = generateRandomState();
+    console.log("userId from redirect to github:", userId);
+
+    // Generate state and store user context
+    const state = generateRandomState();
     authStates.set(state, {
       userId,
-      redirectUrl: process.env.FRONTEND_URL,
+      redirectUrl: redirectUrl ? decodeURIComponent(redirectUrl) : process.env.FRONTEND_URL,
       timestamp: Date.now()
     });
+
+    // Clean up old states
+    cleanupOldStates();
+
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirectUri = process.env.GITHUB_REDIRECT_URI;
+    const scope = "read:user user:email repo";
+
+    if (!clientId || !redirectUri) {
+      return res.status(500).json({ error: "Missing GitHub OAuth configuration" });
+    }
+
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&scope=${encodeURIComponent(scope)}&state=${state}`;
+
+    return res.redirect(githubAuthUrl);
+
+  } catch (error) {
+    console.error("Error in redirectToGithub:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
-
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = process.env.GITHUB_REDIRECT_URI;
-  const scope = "read:user user:email repo";
-
-  if (!clientId || !redirectUri) {
-    return res.status(500).json({ error: "Missing GitHub OAuth configuration" });
-  }
-
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&scope=${encodeURIComponent(scope)}&state=${state}`;
-
-  return res.redirect(githubAuthUrl);
 };
 
 // Updated githubCallback to handle state
