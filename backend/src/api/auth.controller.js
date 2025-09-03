@@ -117,6 +117,10 @@ export const redirectToGithub = async (req, res) => {
   // Check if we have a stored state from prepare-auth
   const authState = req.cookies?.github_auth_state;
   let state = authState;
+
+  console.log("hello from redirect to github");
+
+  const userId = req.auth?.userId;
   
   // If no stored state, create one (fallback for direct access)
   if (!authState) {
