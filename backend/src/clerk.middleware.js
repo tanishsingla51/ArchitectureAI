@@ -70,7 +70,7 @@ export const clerkMiddleware = async (req, res, next) => {
  * Middleware to require authentication
  */
 export const requireAuth = (req, res, next) => {
-  if (!req.auth?.userId) {
+  if (!req.auth.userId) {
     // console.warn("⚠️ Authentication required but no user found");
     return res.status(401).json({ error: "Unauthorized - Please sign in" });
   }
