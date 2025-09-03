@@ -13,20 +13,34 @@ dotenv.config();
 // Initialize the Express app
 const app = express();
 
-// CORS configuration
+// CORS configuration - Fixed wildcard issue
 const corsOptions = {
-  origin: [
-    'http://localhost:3000', // Local development
-    'http://localhost:5173', // Vite dev server
-    'https://architecture-ai-amber.vercel.app', // Your Vercel frontend
-    'https://architecture-ai-eta.vercel.app', // Your other Vercel frontend
-    'https://*.vercel.app', // All Vercel domains
-    process.env.FRONTEND_URL, // Environment variable
-  ].filter(Boolean),
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://architecture-ai-amber.vercel.app',
+      'https://architecture-ai-eta.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    // Check if the origin ends with .vercel.app (for dynamic Vercel deployments)
+    const isVercelApp = origin.endsWith('.vercel.app');
+    
+    if (allowedOrigins.includes(origin) || isVercelApp) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  Headers: true,
+  exposedHeaders: ['set-cookie'], // Important for cookie handling
 };
 
 app.use(cookieParser());
@@ -38,25 +52,34 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Basic error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
+// Apply Clerk middleware globally
 app.use(clerkMiddleware);
 
-app.use('/api', requireAuth , geminiRoutes);
-app.use('/api/auth' , authRoutes);
-app.use("/api/github", requireAuth , githubRoutes);
+// Routes
+app.use('/api', requireAuth, geminiRoutes);
+app.use('/api/auth', authRoutes); // No requireAuth here since it includes login routes
+app.use('/api/github', requireAuth, githubRoutes);
+
+// Basic error handling middleware (should be after routes)
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  if (err.message === 'Not allowed by CORS') {
+    res.status(403).json({ error: 'CORS policy violation' });
+  } else {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Start the server
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
 });
