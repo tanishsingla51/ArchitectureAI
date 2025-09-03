@@ -80,7 +80,7 @@ const GithubLoginButton = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          redirectUrl: window.location.origin + window.location.pathname
+          redirectUrl: window.location.origin + window.location.pathname 
         }),
         credentials: 'include'
       });

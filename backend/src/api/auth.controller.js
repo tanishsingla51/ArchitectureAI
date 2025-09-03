@@ -113,11 +113,6 @@ export const disconnectGithub = async (req, res) => {
 
 // Updated redirectToGithub to use stored state
 export const redirectToGithub = async (req, res) => {
-  const userId = req.auth?.userId;
-
-  if (!userId) {
-    return res.status(401).json({ error: "User not authenticated" });
-  }
 
   // Check if we have a stored state from prepare-auth
   const authState = req.cookies?.github_auth_state;
